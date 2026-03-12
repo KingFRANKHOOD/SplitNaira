@@ -1,0 +1,34 @@
+use soroban_sdk::contracterror;
+
+/// All possible errors the SplitNaira contract can return.
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[repr(u32)]
+pub enum SplitError {
+    /// Project ID already exists on-chain
+    ProjectExists = 1,
+
+    /// Project ID not found
+    NotFound = 2,
+
+    /// Caller is not the project owner
+    Unauthorized = 3,
+
+    /// Basis points do not sum to exactly 10,000
+    InvalidSplit = 4,
+
+    /// Fewer than 2 collaborators provided
+    TooFewCollaborators = 5,
+
+    /// A collaborator was assigned 0 basis points
+    ZeroShare = 6,
+
+    /// Contract holds no token balance to distribute
+    NoBalance = 7,
+
+    /// Project is already locked and cannot be modified
+    AlreadyLocked = 8,
+
+    /// Project is locked; splits cannot be updated
+    ProjectLocked = 9,
+}
