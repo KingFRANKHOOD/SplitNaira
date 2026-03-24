@@ -15,23 +15,27 @@ import { loadStellarConfig, RequestValidationError } from "../services/stellar.j
 export const splitsRouter = Router();
 
 const collaboratorSchema = z.object({
-  address: z.string().min(1),
-  alias: z.string().min(1).max(64),
-  basisPoints: z.number().int().min(1).max(10_000)
+  address: z.string().min(1, "address is required"),
+  alias: z.string().min(1, "alias is required").max(64),
+  basisPoints: z
+    .number()
+    .int("basisPoints must be an integer")
+    .positive("basisPoints must be greater than 0")
+    .max(10_000, "basisPoints must be <= 10000")
 });
 
 const createSplitSchema = z
   .object({
-    owner: z.string().min(1),
+    owner: z.string().min(1, "owner is required"),
     projectId: z
       .string()
-      .min(1)
+      .min(1, "projectId is required")
       .max(32)
       .regex(/^[a-zA-Z0-9_]+$/, "projectId must be alphanumeric/underscore"),
-    title: z.string().min(1).max(128),
-    projectType: z.string().min(1).max(32),
-    token: z.string().min(1),
-    collaborators: z.array(collaboratorSchema).min(2)
+    title: z.string().min(1, "title is required").max(128),
+    projectType: z.string().min(1, "projectType is required").max(32),
+    token: z.string().min(1, "token is required"),
+    collaborators: z.array(collaboratorSchema).min(2, "at least 2 collaborators are required")
   })
   .superRefine((payload, ctx) => {
     const totalBasisPoints = payload.collaborators.reduce(
@@ -42,7 +46,7 @@ const createSplitSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["collaborators"],
-        message: "collaborators basisPoints must sum to 10,000"
+        message: "collaborators basisPoints must sum to exactly 10000"
       });
     }
 
@@ -107,6 +111,7 @@ async function buildCreateProjectUnsignedXdr(
   } catch {
     throw new RequestValidationError("owner/token/collaborator addresses must be valid Stellar addresses");
   }
+
   const contract = new Contract(config.contractId);
 
   const tx = new TransactionBuilder(sourceAccount, {
