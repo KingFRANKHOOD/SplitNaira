@@ -1,4 +1,4 @@
-﻿# SplitNaira
+# SplitNaira
 
 Royalty splitting for Nigeria's creative economy, powered by Stellar and Soroban.
 
@@ -62,6 +62,95 @@ cp frontend/.env.example frontend/.env.local
 # Backend
 cp backend/.env.example backend/.env
 ```
+
+## Testnet Deployment Guide
+
+Use this guide to build the Soroban contract, deploy to Stellar testnet, and wire the deployed contract ID into backend/frontend.
+
+### Prerequisites
+
+- `stellar` CLI installed and authenticated
+- Rust toolchain installed
+- A funded Stellar testnet account for deployment
+
+### 1) Build the contract (WASM)
+
+```bash
+cd contracts
+stellar contract build
+```
+
+Built artifact is generated under `contracts/target/wasm32v1-none/release/`.
+
+### 2) Configure testnet in Stellar CLI
+
+```bash
+stellar network add testnet --rpc-url https://soroban-testnet.stellar.org --network-passphrase "Test SDF Network ; September 2015"
+```
+
+If your deployer key is not set up yet:
+
+```bash
+stellar keys generate alice
+stellar keys fund alice --network testnet
+```
+
+### 3) Deploy the contract to testnet
+
+From `contracts/`, run:
+
+```bash
+stellar contract deploy \
+  --wasm target/wasm32v1-none/release/splitnaira_contract.wasm \
+  --source alice \
+  --network testnet
+```
+
+Copy the returned contract ID (starts with `C...`).
+
+### 4) Set contract ID in backend
+
+Update `backend/.env`:
+
+```bash
+HORIZON_URL=https://horizon-testnet.stellar.org
+SOROBAN_RPC_URL=https://soroban-testnet.stellar.org
+SOROBAN_NETWORK_PASSPHRASE=Test SDF Network ; September 2015
+CONTRACT_ID=<PASTE_TESTNET_CONTRACT_ID>
+```
+
+### 5) Set contract ID in frontend
+
+Update `frontend/.env.local`:
+
+```bash
+NEXT_PUBLIC_STELLAR_NETWORK=testnet
+NEXT_PUBLIC_SOROBAN_RPC_URL=https://soroban-testnet.stellar.org
+NEXT_PUBLIC_HORIZON_URL=https://horizon-testnet.stellar.org
+NEXT_PUBLIC_CONTRACT_ID=<PASTE_TESTNET_CONTRACT_ID>
+```
+
+### 6) Run backend + frontend against testnet
+
+```bash
+# terminal 1
+cd backend
+npm install
+npm run dev
+```
+
+```bash
+# terminal 2
+cd frontend
+npm install
+npm run dev
+```
+
+### 7) Quick verification
+
+- Backend health endpoint responds at `http://localhost:3001/health`
+- Frontend loads at `http://localhost:3000`
+- Creating a split from frontend/backend flow returns an unsigned XDR built against your deployed testnet contract ID
 
 ## Project Structure
 
